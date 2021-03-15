@@ -1,0 +1,2 @@
+include README.md
+include iot_kernel/images/*
