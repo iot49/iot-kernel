@@ -107,61 +107,77 @@ class IoTKernel(IPythonKernel):
             'execution_count': self.execution_count,
         }
 
+    def execute_ipython(self, code):
+        # evaluate code with IPython
+        super().do_execute(code, self.silent, self.store_history, self.user_expressions, self.allow_stdin)
+
     def __execute_section(self, cell):
         head, code = (cell + '\n').split('\n', 1)
         code = code.strip()
         magic, args = (head + ' ').split(' ', 1)
         args = args.strip()
         if magic == '%%connect':
-            if not code:
-                return
-            if not args:
-                # run cell on currently connected mcu
-                self.__execute_cell(code)
-            else:
-                # run cell on each mcu in %%connect argument list
-                dev_ = self.__device
-                try:
-                    names = args.split(' ')
-                    for hostname in names:
-                        if not hostname or hostname == '-q':
-                            continue
-                        # if not '-q' in names:
-                        #     self.print(f"\n----- {hostname}\n", 'grey', 'on_yellow')
-                        if hostname == '--host':
-                            # accept '--host' as the host's hostname
-                            self.execute_ipython(code)
-                        elif hostname == '--all':
-                            for d in self.device_registry.devices:
-                                self.device = d
-                                try:
-                                    self.__execute_cell(code)
-                                except StopDoExecute:
-                                    pass
-                        else:
-                            try:
-                                dev = self.device_registry.get_device(hostname)
-                                if not dev:
-                                    self.error(f"No such device: {hostname}")
-                                    continue
-                                self.device = dev
-                                self.__execute_cell(code)
-                            except StopDoExecute:
-                                pass
-                finally:
-                    self.device = dev_
+            self.__connect_magic(args, code)
         elif magic == '%%host':
-            # evaluate code on ipython
             return self.execute_ipython(code)
+        elif magic == '%%bash':
+            return self.__bash_magic(args, code)
         elif magic == '%%kernel':
             exec(code)
         else:
             # let ipython handle the cell magic
             return self.execute_ipython(cell)
 
-    def execute_ipython(self, code):
-        # evaluate code with IPython
-        super().do_execute(code, self.silent, self.store_history, self.user_expressions, self.allow_stdin)
+    def __bash_magic(self, args, code):
+        from subprocess import Popen, PIPE, STDOUT
+        from IPython.core.magic import register_line_magic
+        with Popen(code, stdout=PIPE, shell=True, stderr=STDOUT, close_fds=True) as process:
+            for line in iter(process.stdout.readline, b''):
+                self.print(line.rstrip().decode('utf-8'))
+
+    def __connect_magic(self, args, code):
+        def show(hostname):
+            nonlocal names
+            if not '-q' in names:
+                self.print(f"\n----- {hostname}\n", 'grey', 'on_cyan')
+        if not code:
+            return
+        if not args:
+            # run cell on currently connected mcu
+            self.__execute_cell(code)
+        else:
+            # run cell on each mcu in %%connect argument list
+            dev_ = self.__device
+            try:
+                names = args.split(' ')
+                for hostname in names:
+                    if not hostname or hostname == '-q':
+                        continue
+                    if hostname == '--host':
+                        # accept '--host' as the host's hostname
+                        show("HOST")
+                        self.execute_ipython(code)
+                    elif hostname == '--all':
+                        for d in self.device_registry.devices:
+                            self.device = d
+                            try:
+                                show(d.name)
+                                self.__execute_cell(code)
+                            except StopDoExecute:
+                                pass
+                    else:
+                        try:
+                            dev = self.device_registry.get_device(hostname)
+                            if not dev:
+                                self.error(f"No such device: {hostname}")
+                                continue
+                            self.device = dev
+                            show(dev.name)
+                            self.__execute_cell(code)
+                        except StopDoExecute:
+                            pass
+            finally:
+                self.device = dev_
 
     def __execute_cell(self, code):
         # evaluate IoT Python cell
