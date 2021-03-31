@@ -1,5 +1,6 @@
 from .magic import line_magic, arg
 from .micropip import install_pkg as upip_install
+from iot_device import Config
 import subprocess, shlex, shutil, glob
 import os, sys
 
@@ -9,7 +10,7 @@ def pip_install(kernel, package, target):
     cmd = f"pip install {package} -t {target} --upgrade --no-deps"
     # run pip
     process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+    stdout, _ = process.communicate()
     kernel.print(f"{stdout.decode().strip()}\n")
     if process.returncode != 0:
         kernel.error(f"installation of {package} failed")
@@ -19,8 +20,7 @@ def pip_install(kernel, package, target):
         for f in files: shutil.rmtree(f)
 
 
-@arg("-l", "--lib", default='lib', help="target directory within the project folder")
-@arg("-p", "--project", default=None, help="project directory to install in")
+@arg("-t", "--target", default=None, help="target directory relative to $IOT49")
 @arg('packages', nargs="+", help="names (on PyPi) of packages to install")
 @arg('operation', help="only supported value is 'install'")
 @line_magic
@@ -32,20 +32,18 @@ The directory is created if it does not exist.
 Examples:
 
     %pip install adafruit-io Adafruit-BME280
-    %pip install -p my_pkg -l my_lib Adafruit-BME280
+    %pip install -t boards/samd51/code/lib Adafruit-BME280
     """
-    path = args.project
-    if not path: path = kernel.device.projects[-1]
-    path = os.path.join(path, args.lib)
-    os.makedirs(path, exist_ok=True)
-    for p in args.packages:
-        pip_install(kernel, p, path)
+    for package in args.packages:
+        target = args.target
+        if not target: target = os.path.join('boards/libs', package)
+        target = os.path.join(Config.iot49_dir(), target)
+        os.makedirs(target, exist_ok=True)
+        pip_install(kernel, package, target)
 
 
-
-@arg("-l", "--lib", default='lib', help="target directory within the project folder")
-@arg("-p", "--project", default=None, help="project directory to install in")
-@arg('packages', nargs="+", help="names (on PyPi) of packages to install")
+@arg("-t", "--target", default="boards/libs", help="target directory relative to $IOT49")
+@arg('packages', nargs="+", help="names of packages to install")
 @arg('operation', help="only supported value is 'install'")
 @line_magic
 def upip_magic(kernel, args):
@@ -61,17 +59,14 @@ The directory is created if it does not exist.
 Examples:
 
     %upip install micropython-copy micropython-abc
-    %upip install -p my_pkg -l my_lib collections
 
 The install is delegated to "micropip.py" described at
 https://github.com/peterhinch/micropython-samples/tree/master/micropip.
     """
-    path = args.project
-    if not path: path = kernel.device.projects[-1]
-    path = os.path.abspath(os.path.join(path, args.lib))
-    if not path.endswith('/'): path += '/'
-    os.makedirs(path, exist_ok=True)
+    target = os.path.join(Config.iot49_dir(), args.target)
+    if not target.endswith('/'): target += '/'
+    os.makedirs(target, exist_ok=True)
     for p in args.packages:
         if not p.startswith('micropython-'):
             p = 'micropython-' + p
-        upip_install(p, path)
+        upip_install(p, target)
