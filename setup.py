@@ -9,6 +9,7 @@ install_requires = [
     "iot-device>=0.4.7",
     "termcolor",
     "argparse",
+    "ipynbname",
 ]
 
 setuptools.setup(

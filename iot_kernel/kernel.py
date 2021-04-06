@@ -4,6 +4,7 @@ from iot_device import Config
 import iot_device
 
 from .kernel_logger import logger
+from .connect_db import default_uid, store_default_uid
 from .magics.magic import LINE_MAGIC
 from .version import __version__
 
@@ -50,22 +51,20 @@ class IoTKernel(IPythonKernel):
 
     @property
     def default_device(self):
-        try:
-            return self.shell.db['autorestore/iot49_default_device']
-        except KeyError:
-            return None
+        return default_uid()
 
     @default_device.setter
     def default_device(self, device):
         if device != None:
-            device = device.uid
-        self.shell.db['autorestore/iot49_default_device'] = device
+            store_default_uid(device.uid)
 
     @property
     def device(self):
         if not self.__device:
             self.__device = self.device_registry.get_device(self.default_device)
-            if not self.__device:
+            if self.__device:
+                self.print(f"Connected to {self.__device.name} @ {self.__device.url}", 'grey', 'on_cyan')
+            else:
                 raise RemoteError("no device connected")
         return self.__device
 

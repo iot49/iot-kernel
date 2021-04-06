@@ -1,5 +1,6 @@
-from iot_device import RemoteError
+from iot_device import Config, RemoteError
 from .magic import line_magic, arg
+
 
 @arg('-v', '--verbose', action='store_true', help="also list configured devices")
 @line_magic
@@ -17,8 +18,6 @@ def discover_magic(kernel, args):
 
 
 @arg('-q', '--quiet', action='store_true', help="no output (except errors)")
-@arg('-s', '--set', action='store_true', help="connect and set as default")
-@arg('-c', '--clear', action='store_true', help="connect and clear default")
 @arg('schemes', nargs='*', default=None, help="connection scheme")
 @arg('hostname', help="hostname, uid, or url")
 @line_magic
@@ -26,7 +25,6 @@ def connect_magic(kernel, args):
     """Connect to device
 
     Examples:
-        %connect -s my_esp32
         %connect my_esp32 serial
         %connect my_esp32 mp
         %connect 37:ae:a4:39:84:34
@@ -39,11 +37,8 @@ def connect_magic(kernel, args):
     if dev:
         kernel.device = dev
         if not args.quiet:
-            kernel.print(f"Connected to {dev.name} @ {dev.url}")
-        if args.clear:
-            kernel.default_device = None
-        if args.set:
-            kernel.default_device = dev
+            kernel.print(f"Connected to {dev.name} @ {dev.url}", 'grey', 'on_cyan')
+        kernel.default_device = dev
     else:
         kernel.stop(f"Device not available: '{args.hostname}'")
 
