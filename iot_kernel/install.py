@@ -18,9 +18,15 @@ def install(target_dir, kernel_name):
 
     os.makedirs(target_dir, exist_ok=True)
     src_dir = os.path.join(os.path.dirname(__file__), "images")
-    for file in [ "logo-32x32.png", "logo-64x64.png" ]:
-        shutil.copy(os.path.join(src_dir, file), os.path.join(target_dir, file))
-
+    print("target_dir", target_dir)
+    print("__file__", __file__)
+    print("dir __file__", os.path.dirname(__file__))
+    print("src_dir", src_dir)
+    try:
+        for file in [ "logo-32x32.png", "logo-64x64.png" ]:
+            shutil.copy(os.path.join(src_dir, file), os.path.join(target_dir, file))
+    except NotADirectoryError as e:
+        print(f"cannot install  images from egg: {e}")
     #
     # create and write the kernel.json file
     #
