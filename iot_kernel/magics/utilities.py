@@ -1,4 +1,4 @@
-from .magic import line_magic, arg, LINE_MAGIC
+from .magic import line_magic, arg, CELL_MAGIC, LINE_MAGIC
 from ..kernel_logger import logger
 
 from iot_device import Config
@@ -33,12 +33,10 @@ def lsmagic_magic(kernel, args):
         if not v[1]: continue
         kernel.print("  %{:10s}  {}".format(k, v[1]))
     kernel.print("  {:11s}  {}".format('!', "Pass line to bash shell for evaluation."))
-    kernel.print("\nCell Magic:")
-    kernel.print("  {:11s}  {}".format('%%host', "Pass cell to host (cPython) for evaluation."))
-    kernel.print("  {:11s}  {}".format('%%bash', "Pass cell to the bash shell for evaluation."))
-    kernel.print("  {:11s}  {}".format('%%connect', "Evaluate code sequentially on named devices."))
-    kernel.print("  {:11s}  {}".format('', "--host executes on host (cPython)."))
-    kernel.print("  {:11s}  {}".format('', "--all executes on all connected devices."))
+    kernel.print("\nCell Magic:    -h shows help (e.g. %%connect -h)")
+    for k, v in sorted(CELL_MAGIC.items()):
+        if not v[1]: continue
+        kernel.print("  %%{:10s} {}".format(k, v[1]))
 
 
 @arg('level', nargs='?', default='INFO', const='INFO', choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], help="logging levels")

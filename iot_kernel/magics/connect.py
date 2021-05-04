@@ -1,76 +1,76 @@
-from iot_device import Config, RemoteError
-from .magic import line_magic, arg
+from .magic import cell_magic, arg
 
+@arg("-q", "--quiet", action="store_true", help="suppress terminal output")
+@arg("--all", action="store_true", help="run code on all connected microcontrollers")
+@arg("--host", action="store_true", help="run code host (ipython)")
+@arg('names', nargs='*', help="microcontroller names or UIDs")
+@cell_magic
+def connect_magic(kernel, args, code):
+    """Evaluate code sequentially on named devices.
+Examples:
 
-@arg('-v', '--verbose', action='store_true', help="also list configured devices")
-@line_magic
-def discover_magic(kernel, args):
-    "Discover available devices"
-    devices = kernel.device_registry.devices
-    n_width = max([len(dev.name) for dev in devices], default=0)
-    u_width = max([len(dev.url)  for dev in devices], default=0)
-    if len(devices):
-        for dev in devices:
-            uid = dev.uid if args.verbose else ''
-            kernel.print(f"{dev.name:{n_width}}  {dev.url:{u_width}}  {uid}")
-    else:
-        kernel.print("No devices available")
+  %%connect --host --all
+  # evaluate on host and all connected microcontrollers
+  import sys
+  print(sys.platform)
 
-
-@arg('-q', '--quiet', action='store_true', help="no output (except errors)")
-@arg('schemes', nargs='*', default=None, help="connection scheme")
-@arg('hostname', help="hostname, uid, or url")
-@line_magic
-def connect_magic(kernel, args):
-    """Connect to device
-
-    Examples:
-        %connect my_esp32 serial
-        %connect my_esp32 mp
-        %connect 37:ae:a4:39:84:34
-        %connect 'serial:///dev/cu.usbserial-0160B5B8'
-        %connect 'mp://10.39.40.135:8266'
-
-    Note: device must be registered for connect to work (see %discover and %register).
+  %%connect mcu1 mcu2
+  # evaluate on named devics mcu1, mcu2
+  print('hello world')
     """
-    dev = kernel.device_registry.get_device(args.hostname, schemes=args.schemes)
-    if dev:
-        kernel.device = dev
+    from .. import StopDoExecute
+    def show(hostname):
+        nonlocal args, kernel
         if not args.quiet:
-            kernel.print(f"Connected to {dev.name} @ {dev.url}", 'grey', 'on_cyan')
-        kernel.default_device = dev
+            kernel.print(f"\n----- {hostname}\n", 'grey', 'on_cyan')
+    if len(code) == 0: return
+    if args.host:
+        show("HOST")
+        kernel.execute_ipython(code)
+    if args.all:
+        for d in kernel.device_registry.devices:
+            kernel.device = d
+            try:
+                show(d.name)
+                kernel.execute_cell(code)
+            except StopDoExecute:
+                pass
     else:
-        kernel.stop(f"Device not available: '{args.hostname}'")
+        if len(args.names) > 0:
+            for hostname in args.names:
+                try:
+                    dev = kernel.device_registry.get_device(hostname)
+                    if not dev:
+                        kernel.error(f"No such device: {hostname}")
+                        continue
+                    kernel.device = dev
+                    show(dev.name)
+                    kernel.execute_cell(code)
+                except StopDoExecute:
+                    pass
+        else:
+            kernel.execute_cell(code)
 
+@cell_magic
+def host_magic(kernel, _, code):
+    """Pass cell to host (cPython) for evaluation."""
+    kernel.execute_ipython(code)
 
-@arg('url', help="register device by url")
-@line_magic
-def register_magic(kernel, args):
-    """Register device
+@cell_magic
+def bash_magic(kernel, _, code):
+    """Pass cell to bash shell for evaluation.
 
-    Examples:
-        %register 'serial:///dev/cu.usbserial-0160B5B8'
-        %register 'mp://10.39.40.135:8266'
+Example:
+  %%bash
+  printenv
     """
-    try:
-        kernel.device_registry.register(args.url)
-    except ValueError:
-        kernel.stop("invalid url")
-    except RemoteError as e:
-        kernel.stop(e)
+    from subprocess import Popen, PIPE, STDOUT
+    from IPython.core.magic import register_line_magic
+    with Popen(code, stdout=PIPE, shell=True, stderr=STDOUT, close_fds=True) as process:
+        for line in iter(process.stdout.readline, b''):
+            kernel.print(line.rstrip().decode('utf-8'))
 
-
-@arg('name', help="unregister device")
-@line_magic
-def unregister_magic(kernel, args):
-    """Unregister device
-
-    Examples:
-        %unregister my_esp32
-        %unregister 30:ae:a4:32:84:34
-        %unregister 'serial:///dev/cu.usbserial-0160B5B8'
-    """
-    try:
-        kernel.device_registry.unregister(args.name)
-    except ValueError as e:
-        kernel.stop(e)
+@cell_magic
+def kernel_magic(kernel, _, code):
+    # exec code in kernel contect. Debugging only.
+    exec(code)

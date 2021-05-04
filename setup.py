@@ -5,10 +5,9 @@ from iot_kernel import version
 
 install_requires = [
     "ipykernel",
-    "pyserial",
-    "iot-device>=0.4.7",
-    "termcolor",
+    "iot-device>=0.4.11",
     "argparse",
+    "paramiko",
     "ipynbname",
 ]
 

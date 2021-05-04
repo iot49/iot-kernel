@@ -5,7 +5,7 @@ import iot_device
 
 from .kernel_logger import logger
 from .connect_db import default_uid, store_default_uid
-from .magics.magic import LINE_MAGIC
+from .magics.magic import LINE_MAGIC, CELL_MAGIC
 from .version import __version__
 
 from serial import SerialException
@@ -78,6 +78,7 @@ class IoTKernel(IPythonKernel):
         self.user_expressions = user_expressions
         self.allow_stdin = allow_stdin
         try:
+            # transform all code sections into %%name ... + body
             for cell in ('connect\n' + code).split('\n%%'):
                 self.__execute_section('%%' + cell)
         except StopDoExecute:
@@ -106,79 +107,21 @@ class IoTKernel(IPythonKernel):
             'execution_count': self.execution_count,
         }
 
-    def execute_ipython(self, code):
-        # evaluate code with IPython
-        super().do_execute(code, self.silent, self.store_history, self.user_expressions, self.allow_stdin)
-
     def __execute_section(self, cell):
+        # handle cell (starts with %%name ...)
         head, code = (cell + '\n').split('\n', 1)
         code = code.strip()
         magic, args = (head + ' ').split(' ', 1)
         args = args.strip()
-        if magic == '%%connect':
-            self.__connect_magic(args, code)
-        elif magic == '%%host':
-            return self.execute_ipython(code)
-        elif magic == '%%bash':
-            return self.__bash_magic(args, code)
-        elif magic == '%%kernel':
-            exec(code)
+        logger.debug(f"cell_magic {magic} args={args} code={code}")
+        method = CELL_MAGIC.get(magic[2:])
+        if method:
+            method[0](self, args, code)
         else:
             # let ipython handle the cell magic
             return self.execute_ipython(cell)
 
-    def __bash_magic(self, args, code):
-        from subprocess import Popen, PIPE, STDOUT
-        from IPython.core.magic import register_line_magic
-        with Popen(code, stdout=PIPE, shell=True, stderr=STDOUT, close_fds=True) as process:
-            for line in iter(process.stdout.readline, b''):
-                self.print(line.rstrip().decode('utf-8'))
-
-    def __connect_magic(self, args, code):
-        def show(hostname):
-            nonlocal names
-            if not '-q' in names:
-                self.print(f"\n----- {hostname}\n", 'grey', 'on_cyan')
-        if not code:
-            return
-        if not args:
-            # run cell on currently connected mcu
-            self.__execute_cell(code)
-        else:
-            # run cell on each mcu in %%connect argument list
-            dev_ = self.__device
-            try:
-                names = args.split(' ')
-                for hostname in names:
-                    if not hostname or hostname == '-q':
-                        continue
-                    if hostname == '--host':
-                        # accept '--host' as the host's hostname
-                        show("HOST")
-                        self.execute_ipython(code)
-                    elif hostname == '--all':
-                        for d in self.device_registry.devices:
-                            self.device = d
-                            try:
-                                show(d.name)
-                                self.__execute_cell(code)
-                            except StopDoExecute:
-                                pass
-                    else:
-                        try:
-                            dev = self.device_registry.get_device(hostname)
-                            if not dev:
-                                self.error(f"No such device: {hostname}")
-                                continue
-                            self.device = dev
-                            show(dev.name)
-                            self.__execute_cell(code)
-                        except StopDoExecute:
-                            pass
-            finally:
-                self.device = dev_
-
-    def __execute_cell(self, code):
+    def execute_cell(self, code):
         # evaluate IoT Python cell
         while code:
             code = code.strip()
@@ -214,6 +157,10 @@ class IoTKernel(IPythonKernel):
             # pass line magic to ipython
             logger.debug(f"pass to IPython: {line}")
             self.execute_ipython(line)
+
+    def execute_ipython(self, code):
+        # evaluate code with IPython
+        super().do_execute(code, self.silent, self.store_history, self.user_expressions, self.allow_stdin)
 
     def data_consumer(self, data:bytes):
         if not data or self.silent: return
