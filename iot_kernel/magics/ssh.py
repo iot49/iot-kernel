@@ -70,7 +70,7 @@ Example:
     with paramiko.SSHClient() as ssh:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect('localhost', 22222, 'root', '')
-        _, stdout, stderr = ssh.exec_command(f"balena-engine exec {container_name} {code}")
+        _, stdout, stderr = ssh.exec_command(f'balena-engine exec {container_name} bash -c "{code}"')
         for line in stdout.readlines():
             kernel.print(line, end='')
         for line in stderr.readlines():
