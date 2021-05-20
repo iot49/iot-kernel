@@ -34,12 +34,12 @@ Example:
 
 @arg('container', nargs=1, help="name of container to ssh into")
 @cell_magic
-def balena_magic(kernel, args, code):
+def service_magic(kernel, args, code):
     """Evaluate in named container using ssh.
-Available only in Balena OS.
+This specifically supports balena apps.
 
 Example:
-    %%balena gcc
+    %%service gcc
     printenv
     ls /
     which gcc
