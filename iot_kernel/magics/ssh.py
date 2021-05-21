@@ -1,5 +1,5 @@
 from .magic import cell_magic, arg
-import paramiko
+import paramiko, time
 
 
 @arg("--password", type=str, default=None, help="password")
@@ -19,17 +19,7 @@ Example:
         user, host = host.split('@', 1)
     port = args.port
     pwd = args.password or ''
-    with paramiko.SSHClient() as ssh:
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            ssh.connect(host, port, user, pwd)
-            _, stdout, stderr = ssh.exec_command(code)
-            for line in stdout.readlines():
-                kernel.print(line, end='')
-            for line in stderr.readlines():
-                kernel.error(line, end='')
-        except Exception as e:
-            kernel.error(f"***** {e}")
+    ssh_exec(kernel, host, port, user, pwd, code)
 
 
 @arg('container', nargs=1, help="name of container to ssh into")
@@ -67,11 +57,23 @@ Example:
         return
 
     # 3) ssh into container
+    cmd = f"balena-engine exec {container_name} bash -c '{code}'"
+    ssh_exec(kernel, 'localhost', 22222, 'root', '', cmd)
+
+
+def ssh_exec(kernel, host, port, user, pwd, cmd):
+    """exec command on host, print results"""
     with paramiko.SSHClient() as ssh:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect('localhost', 22222, 'root', '')
-        _, stdout, stderr = ssh.exec_command(f"balena-engine exec {container_name} bash -c '{code}'")
-        for line in stdout.readlines():
-            kernel.print(line, end='')
-        for line in stderr.readlines():
-            kernel.error(line, end='')
+        ssh.connect(host, port, user, pwd)
+        channel = ssh.get_transport().open_session()
+        channel.exec_command(cmd)
+        while True:
+            if channel.exit_status_ready():
+                break
+            while channel.recv_ready():
+                kernel.print(channel.recv(1).decode(), end='')
+            while channel.recv_stderr_ready():
+                kernel.error(channel.recv_stderr(1).decode(), end='')
+            time.sleep(0.001)
+
