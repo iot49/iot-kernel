@@ -71,9 +71,15 @@ def ssh_exec(kernel, host, port, user, pwd, cmd):
         while True:
             if channel.exit_status_ready():
                 break
+            buf = b''
             while channel.recv_ready():
-                kernel.print(channel.recv(1).decode(), end='')
+                buf += channel.recv(1)
+            if len(buf):
+                kernel.print(buf.decode(), end='')
+            buf = b''
             while channel.recv_stderr_ready():
-                kernel.error(channel.recv_stderr(1).decode(), end='')
+                buf += channel.recv_stderr(1)
+            if len(buf):
+                kernel.error(buf.decode(), end='')
             time.sleep(0.001)
 
