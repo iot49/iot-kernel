@@ -1,7 +1,7 @@
-from iot_device import Config
+from iot_device import Env
 import ipynbname, os
 
-_DB = os.path.join(Config.iot49_dir(), ".iot49_connect_rc")
+_DB = os.path.join(Env.iot_dir(), ".iot49_connect_rc")
 
 def _load_db():
     try:

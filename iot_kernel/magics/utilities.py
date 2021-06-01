@@ -1,14 +1,14 @@
 from .magic import line_magic, arg, CELL_MAGIC, LINE_MAGIC
 from ..kernel_logger import logger
 
-from iot_device import Config
+from iot_device import Env
 from termcolor import colored
 
 import logging
 import os
 
 
-@arg('path', nargs="?", default=Config.iot49_dir(), help="New working directory. Default: $IOT49.")
+@arg('path', nargs="?", default=Env.iot49_dir(), help="New working directory. Default: $IOT49.")
 @line_magic
 def cd_magic(kernel, args):
     """Change the working directory."""

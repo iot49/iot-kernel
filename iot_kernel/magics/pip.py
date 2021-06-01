@@ -1,12 +1,13 @@
 from .magic import line_magic, arg
 from .micropip import install_pkg as upip_install
-from iot_device import Config
+from iot_device import Env
 import subprocess, shlex, shutil, glob
 import os, sys
 
 def pip_install(kernel, package, target):
     # use system pip for intallation & perform some cleanup:
     # ['*.egg-info', '*.dist-info', '__pycache__']
+    # ??? --no-dependencies ???
     cmd = f"pip install {package} -t {target} --upgrade --no-deps"
     # run pip
     process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -37,7 +38,7 @@ Examples:
     for package in args.packages:
         target = args.target
         if not target: target = os.path.join('boards/libs', package)
-        target = os.path.join(Config.iot49_dir(), target)
+        target = os.path.join(Env.iot49_dir(), target)
         os.makedirs(target, exist_ok=True)
         pip_install(kernel, package, target)
 
@@ -63,7 +64,7 @@ Examples:
 The install is delegated to "micropip.py" described at
 https://github.com/peterhinch/micropython-samples/tree/master/micropip.
     """
-    target = os.path.join(Config.iot49_dir(), args.target)
+    target = os.path.join(Env.iot49_dir(), args.target)
     if not target.endswith('/'): target += '/'
     os.makedirs(target, exist_ok=True)
     for p in args.packages:

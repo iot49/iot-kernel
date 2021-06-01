@@ -1,11 +1,5 @@
 from .magic import line_magic, arg
-
-from iot_device import Config
 import shlex
-
-
-# include_patterns = Config.get('project_includes', ['./**/*.py', './**/*.mpy', './**/'])
-# exclude_patterns = Config.get('project_excludes', [])
 
 
 def _rsync(kernel, args, dry_run):

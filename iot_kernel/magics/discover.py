@@ -1,4 +1,4 @@
-from iot_device import Config, RemoteError
+from iot_device import RemoteError
 from .magic import line_magic, arg
 
 

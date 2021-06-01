@@ -1,6 +1,4 @@
 from .magic import line_magic, arg
-from iot_device import Config
-
 import time
 
 @arg("-q", "--quiet", action="store_true", help="suppress terminal output")
@@ -44,13 +42,6 @@ def url_magic(kernel, _):
 
 
 @line_magic
-def packages_magic(kernel, _):
-    """Packages used by currently connected device."""
-    sep = '\n'
-    for p in kernel.device.packages:
-        print(p)
-
-@line_magic
 def platform_magic(kernel, _):
     """sys.platform of currently connected device."""
     kernel.print(platform(kernel.device))
@@ -62,11 +53,6 @@ def info_magic(kernel, _):
     kernel.print(fmt.format('platform', platform(kernel.device)))
     kernel.print(fmt.format('uid', kernel.device.uid))
     kernel.print(fmt.format('url', kernel.device.url))
-    if len(kernel.device.packages) > 0:
-        kernel.print(fmt.format('packages', kernel.device.packages[0]))
-    if len(kernel.device.packages) > 1:
-        for p in kernel.device.packages[1:]:
-            kernel.print(fmt.format('', p))
 
 @line_magic
 def synctime_magic(kernel, _):
@@ -82,16 +68,6 @@ def gettime_magic(kernel, _):
     with kernel.device as repl:
         t = time.mktime(repl.get_time())
         kernel.print(f"{time.strftime('%Y-%b-%d %H:%M:%S', time.localtime(t))}")
-
-@arg('packages', nargs="+", help="package names")
-@line_magic
-def package_magic(kernel, args):
-    "Show contents of package(s)"
-    for p in args.packages:
-        pkg = Config.get_package(p)
-        if pkg:
-            kernel.print(pkg.description())
-
 
 def platform(device):
     with device as repl:

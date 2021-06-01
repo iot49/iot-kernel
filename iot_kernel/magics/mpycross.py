@@ -1,5 +1,5 @@
 from .magic import line_magic, arg
-from iot_device import Config, cd
+from iot_device import Env, cd
 
 from glob import glob
 import os, shlex, shutil, subprocess
@@ -24,11 +24,11 @@ Examples:
     if not packages: packages = kernel.device.packages
     with kernel.device as repl: implementation = repl.implementation
     compiler = args.compiler
-    if not compiler: compiler = os.path.join(Config.iot49_dir(), 'bin', implementation, 'mpy-cross')
+    if not compiler: compiler = os.path.join(Env.iot49_dir(), 'bin', implementation, 'mpy-cross')
     compiler_args = args.args
 
     n = 0
-    with cd(Config.iot49_dir()):
+    with cd(Env.iot49_dir()):
         for package in packages:
             for name, path in package.files().items():
                 if not name.endswith('.py'): continue

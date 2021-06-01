@@ -104,4 +104,6 @@ from .mcu import *
 from .file_ops import *
 from .utilities import *
 from .pip import *
-from .mpycross import *
+
+# do on-the-fly compiling by rsync instead (if desired ...)
+# from .mpycross import *

@@ -1,6 +1,5 @@
 from iot_device import DeviceRegistry
 from iot_device import RemoteError
-from iot_device import Config
 import iot_device
 
 from .kernel_logger import logger

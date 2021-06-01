@@ -41,7 +41,9 @@ Example:
     container_names = {}
     with paramiko.SSHClient() as ssh:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect('localhost', 22222, 'root', '')
+        # 'localhost' works only for network-mode: host, not bridge; 172.17.0.1 works always (?)
+        # ssh.connect('localhost', 22222, 'root', '')
+        ssh.connect('172.17.0.1', 22222, 'root', '')
         _, stdout, stderr = ssh.exec_command("balena-engine ps")
         for line in stdout.readlines()[1:]:
             key = name = line.split()[-1]
@@ -58,7 +60,7 @@ Example:
 
     # 3) ssh into container
     cmd = f"balena-engine exec {container_name} bash -c '{code}'"
-    ssh_exec(kernel, 'localhost', 22222, 'root', '', cmd)
+    ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', cmd)
 
 
 def ssh_exec(kernel, host, port, user, pwd, cmd):
