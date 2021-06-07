@@ -14,7 +14,7 @@ def _rsync(kernel, args, dry_run):
                 # implementation=args.implementation,
                 upload_only=args.upload_only,
                 dry_run=dry_run)
-        except (FileNotFoundError, OSError) as e:
+        except (FileNotFoundError, ValueError) as e:
             kernel.error(e)
 
 

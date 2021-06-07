@@ -1,7 +1,7 @@
 from iot_device import Env
 import ipynbname, os
 
-_DB = os.path.join(Env.iot_dir(), ".iot49_connect_rc")
+_DB = Env.abs_path(os.path.join(Env.iot_dir(), ".iot49_connect_rc"))
 
 def _load_db():
     try:
@@ -27,3 +27,4 @@ def store_default_uid(uid):
     db = _load_db()
     db[_notebook_path()] = uid
     _store_db(db)
+ 
