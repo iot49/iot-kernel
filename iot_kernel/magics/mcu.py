@@ -53,6 +53,7 @@ def info_magic(kernel, _):
     kernel.print(fmt.format('platform', platform(kernel.device)))
     kernel.print(fmt.format('uid', kernel.device.uid))
     kernel.print(fmt.format('url', kernel.device.url))
+    kernel.print(kernel.device.config)
 
 @line_magic
 def synctime_magic(kernel, _):
