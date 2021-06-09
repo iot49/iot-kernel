@@ -65,7 +65,6 @@ Example:
   printenv
     """
     from subprocess import Popen, PIPE, STDOUT
-    from IPython.core.magic import register_line_magic
     with Popen(code, stdout=PIPE, shell=True, stderr=STDOUT, close_fds=True) as process:
         for line in iter(process.stdout.readline, b''):
             kernel.print(line.rstrip().decode('utf-8'))

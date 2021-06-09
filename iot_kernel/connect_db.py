@@ -17,14 +17,14 @@ def _store_db(db):
 def _notebook_path():
     return str(ipynbname.path())
 
-def default_uid():
-    """Return 'default' uid for currently active notebook"""
+def default_dev():
+    """Return 'default' name/uid/url for currently active notebook"""
     db = _load_db()
     return db.get(_notebook_path())
 
-def store_default_uid(uid):
-    """Store uid as 'default' for currently active notebook"""
+def store_default_dev(xid):
+    """Store 'default' name/uid/url for currently active notebook"""
     db = _load_db()
-    db[_notebook_path()] = uid
+    db[_notebook_path()] = xid
     _store_db(db)
  

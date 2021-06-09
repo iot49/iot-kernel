@@ -3,7 +3,7 @@ from iot_device import RemoteError
 import iot_device
 
 from .kernel_logger import logger
-from .connect_db import default_uid, store_default_uid
+from .connect_db import default_dev, store_default_dev
 from .magics.magic import LINE_MAGIC, CELL_MAGIC
 from .version import __version__
 
@@ -50,12 +50,11 @@ class IoTKernel(IPythonKernel):
 
     @property
     def default_device(self):
-        return default_uid()
+        return default_dev()
 
     @default_device.setter
-    def default_device(self, device):
-        if device != None:
-            store_default_uid(device.uid)
+    def default_device(self, xid):
+        if xid: store_default_dev(xid)
 
     @property
     def device(self):

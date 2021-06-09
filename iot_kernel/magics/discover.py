@@ -38,7 +38,7 @@ def connect_magic(kernel, args):
         kernel.device = dev
         if not args.quiet:
             kernel.print(f"Connected to {dev.name} @ {dev.url}", 'grey', 'on_cyan')
-        kernel.default_device = dev
+        kernel.default_device = args.hostname
     else:
         kernel.stop(f"Device not available: '{args.hostname}'")
 
