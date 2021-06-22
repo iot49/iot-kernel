@@ -37,6 +37,10 @@ Example:
     # ssh into container name
     container = args.container[0]
 
+    if container == 'host':
+        ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', code)
+        return
+
     # 1) get container names
     container_names = {}
     with paramiko.SSHClient() as ssh:
