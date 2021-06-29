@@ -1,20 +1,30 @@
 from iot_device import RemoteError
 from .magic import line_magic, arg
+import serial.tools.list_ports
 
 
-@arg('-v', '--verbose', action='store_true', help="also list configured devices")
+@arg('-v', '--verbose', action='store_true', help="show uid")
+@arg('-a', '--all', action='store_true', help="list all devices connected to USB ports")
 @line_magic
 def discover_magic(kernel, args):
     "Discover available devices"
-    devices = kernel.device_registry.devices
-    n_width = max([len(dev.name) for dev in devices], default=0)
-    u_width = max([len(dev.url)  for dev in devices], default=0)
-    if len(devices):
-        for dev in devices:
-            uid = dev.uid if args.verbose else ''
-            kernel.print(f"{dev.name:{n_width}}  {dev.url:{u_width}}  {uid}")
+    if args.all:
+        for port in serial.tools.list_ports.comports():
+            kernel.print(port.device)
+            for a in ["hwid", "manufacturer", "product", "interface"]:
+                if getattr(port, a):
+                    kernel.print(f"  {a:12} {getattr(port, a)}")
+            kernel.print()
     else:
-        kernel.print("No devices available")
+        devices = kernel.device_registry.devices
+        n_width = max([len(dev.name) for dev in devices], default=0)
+        u_width = max([len(dev.url)  for dev in devices], default=0)
+        if len(devices):
+            for dev in devices:
+                uid = dev.uid if args.verbose else ''
+                kernel.print(f"{dev.name:{n_width}}  {dev.url:{u_width}}  {uid}")
+        else:
+            kernel.print("No devices available")
 
 
 @arg('-q', '--quiet', action='store_true', help="no output (except errors)")
