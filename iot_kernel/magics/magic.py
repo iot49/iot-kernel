@@ -39,7 +39,7 @@ def cell_magic(fn):
         prog='%%' + name,
         description=doc[0],
         epilog=doc[1],
-        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, max_help_position=20, width=80))
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, max_help_position=22, width=80))
 
     # add to dict
     CELL_MAGIC[name] = (wrapped, doc[0])
@@ -74,7 +74,7 @@ def line_magic(fn):
         prog='%' + name,
         description=doc[0],
         epilog=doc[1],
-        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, max_help_position=20, width=80))
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, max_help_position=22, width=80))
         # formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # add to dict

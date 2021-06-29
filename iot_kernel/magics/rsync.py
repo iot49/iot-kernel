@@ -18,14 +18,14 @@ def rlist_magic(kernel, _):
     with kernel.device as repl:
         repl.rlist('/', kernel.data_consumer, show=True)
 
-@arg('-u', '--upload_only', default=False, action='store_true', help="do not delete files on microcontroller but not on host")
+@arg('-u', '--upload_only', default=False, action='store_true', help="do not delete files on microcontroller that are not also on host")
 @line_magic
 def rdiff_magic(kernel, args):
     "Show differences between microcontroller and host directories"
     _rsync(kernel, args, True)
 
 
-@arg('-u', '--upload_only', default=False, action='store_true', help="do not delete files on microcontroller but not on host")
+@arg('-u', '--upload_only', default=False, action='store_true', help="do not delete files on microcontroller that are not also on host")
 @line_magic
 def rsync_magic(kernel, args):
     """Synchronize microcontroller to host directories
@@ -33,9 +33,8 @@ Adds files on host but not on microcontroller, updates changed files,
 and deletes files on microcontroller but not on hosts. Ignores files
 starting with a period.
 
-On the host, files are organized into projects (subfolders of $IOT49).
-Projects for each microcontroller can be specified in `devices.py` or
-with the `--projects` option.
+The list of files to upload is taken from the yaml configuration
+in $IOT49/devices.
 
 %rsync synchronizes the time on the microcontroller to the host if
 they differ by more than a few seconds to ensure correct updates.
