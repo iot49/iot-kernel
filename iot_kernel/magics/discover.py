@@ -24,14 +24,14 @@ def discover_magic(kernel, args):
 def connect_magic(kernel, args):
     """Connect to device
 
-    Examples:
-        %connect my_esp32 serial
-        %connect my_esp32 mp
-        %connect 37:ae:a4:39:84:34
-        %connect 'serial:///dev/cu.usbserial-0160B5B8'
-        %connect 'mp://10.39.40.135:8266'
+Examples:
+    %connect my_esp32 serial
+    %connect my_esp32 mp
+    %connect 37:ae:a4:39:84:34
+    %connect 'serial:///dev/cu.usbserial-0160B5B8'
+    %connect 'mp://10.39.40.135:8266'
 
-    Note: device must be registered for connect to work (see %discover and %register).
+Note: device must be registered for connect to work (see %discover and %register).
     """
     dev = kernel.device_registry.get_device(args.hostname, schemes=args.schemes)
     if dev:

@@ -30,16 +30,16 @@ def cell_magic(fn):
         if args: fn(kernel, args, body)
 
     # extract magic name and docstring
-    name = fn.__name__.split('_')[0]
+    name = fn.__name__.rsplit('_')[0]
     doc = (fn.__doc__ or "").split('\n', 1)
     if len(doc) < 2: doc.append("")
 
     # construct the parser
     wrapped.parser = argparse.ArgumentParser(
-        prog='%' + name,
+        prog='%%' + name,
         description=doc[0],
         epilog=doc[1],
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, max_help_position=20, width=80))
 
     # add to dict
     CELL_MAGIC[name] = (wrapped, doc[0])
@@ -65,7 +65,7 @@ def line_magic(fn):
         if args: fn(kernel, args)
 
     # extract magic name and docstring
-    name = fn.__name__.split('_')[0]
+    name = fn.__name__.rsplit('_')[0]
     doc = (fn.__doc__ or "").split('\n', 1)
     if len(doc) < 2: doc.append("")
 
@@ -74,7 +74,8 @@ def line_magic(fn):
         prog='%' + name,
         description=doc[0],
         epilog=doc[1],
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog, max_help_position=20, width=80))
+        # formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # add to dict
     LINE_MAGIC[name] = (wrapped, doc[0])
