@@ -4,8 +4,8 @@ import setuptools
 from iot_kernel import version
 
 install_requires = [
-    "ipykernel",
-    "iot-device>=0.4.11",
+    "ipykernel==5.5.5",
+    "iot-device>=0.5.6",
     "argparse",
     "paramiko",
     "ipynbname",
