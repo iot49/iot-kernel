@@ -2,8 +2,8 @@ from iot_device import DeviceRegistry
 from iot_device import RemoteError
 import iot_device
 
+from .nb_conf import NbConf
 from .kernel_logger import logger
-from .connect_db import default_dev, store_default_dev
 from .magics.magic import LINE_MAGIC, CELL_MAGIC
 from .version import __version__
 
@@ -38,28 +38,23 @@ class IoTKernel(IPythonKernel):
         super().__init__(**kwargs)
         logger.info(f"libraries: iot_kernel {__version__}, {iot_device.__version__}")
         self.__device_registry = DeviceRegistry()
-        # default device
+        # current device
         self.__device = None
-        # set initial iPython cwd
-        code = "import os;  os.chdir(os.getenv('IOT49', '~/iot49'))"
-        super().do_execute(code, True, False, False, False)
+        # set initial host cwd
+        os.chdir(self.nb_conf.get("cwd", os.getenv('IOT', '~')))
 
     @property
     def device_registry(self):
         return self.__device_registry
 
     @property
-    def default_device(self):
-        return default_dev()
-
-    @default_device.setter
-    def default_device(self, xid):
-        if xid: store_default_dev(xid)
+    def nb_conf(self):
+        return NbConf
 
     @property
     def device(self):
         if not self.__device:
-            self.__device = self.device_registry.get_device(self.default_device)
+            self.__device = self.device_registry.get_device(self.nb_conf.get("device"))
             if self.__device:
                 self.print(f"Connected to {self.__device.name} @ {self.__device.url}", 'grey', 'on_cyan')
             else:
@@ -69,6 +64,9 @@ class IoTKernel(IPythonKernel):
     @device.setter
     def device(self, dev):
         self.__device = dev
+
+    def set_default_device(self, uid_or_name_or_path):
+        self.nb_conf.set("device", uid_or_name_or_path)
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent

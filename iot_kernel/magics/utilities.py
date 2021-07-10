@@ -8,13 +8,17 @@ import logging
 import os
 
 
-@arg('path', nargs="?", default=Env.iot49_dir(), help="New working directory. Default: $IOT49.")
+@arg("path", nargs="?", default="~", help="new working directory on host")
 @line_magic
 def cd_magic(kernel, args):
-    """Change the working directory."""
-    os.chdir(args.path)
-    kernel.print(os.getcwd())
-
+    """Change current working directory on host.
+Expands ~ and shell variables (e.g. $IOT49) as expected."""
+    path = os.path.expanduser(os.path.expandvars(args.path))
+    if not os.path.isdir(path):
+        raise ValueError(f"directory '{path}' does not exist")
+    os.chdir(path)
+    kernel.print(f"cwd = {os.getcwd()}")
+    kernel.nb_conf.set("cwd", path)
 
 @arg('-v', '--verbose', action='store_true', help="Show detailed help for each line magic.")
 @line_magic

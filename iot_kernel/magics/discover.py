@@ -48,7 +48,7 @@ Note: device must be registered for connect to work (see %discover and %register
         kernel.device = dev
         if not args.quiet:
             kernel.print(f"Connected to {dev.name} @ {dev.url}", 'grey', 'on_cyan')
-        kernel.default_device = args.hostname
+        kernel.set_default_device(args.hostname)
     else:
         kernel.stop(f"Device not available: '{args.hostname}'")
 
