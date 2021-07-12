@@ -41,7 +41,7 @@ class IoTKernel(IPythonKernel):
         # current device
         self.__device = None
         # set initial host cwd
-        os.chdir(self.nb_conf.get("cwd", os.getenv('IOT', '~')))
+        os.chdir(self.nb_conf.get("cwd", os.path.expanduser('~')))
 
     @property
     def device_registry(self):

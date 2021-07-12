@@ -6,7 +6,7 @@ import os, shlex, shutil, subprocess
 
 
 @arg('-p', '--packages', nargs='*', default=None, help="packages to compile (Default: packages used by connected device)")
-@arg('-c', '--compiler', default=None, help="Path to the compiler, defaults to `$IOT49/bin/{implementation}/mpy-cross`")
+@arg('-c', '--compiler', default=None, help="Path to the compiler, defaults to `~/bin/{implementation}/mpy-cross`")
 @arg('-a', '--args', default="", help="Arguments passed to `mpy-cross`")
 @line_magic
 def mpycross_magic(kernel, args):
@@ -24,11 +24,11 @@ Examples:
     if not packages: packages = kernel.device.packages
     with kernel.device as repl: implementation = repl.implementation
     compiler = args.compiler
-    if not compiler: compiler = os.path.join(Env.iot49_dir(), 'bin', implementation, 'mpy-cross')
+    if not compiler: compiler = os.path.join('~/bin', implementation, 'mpy-cross')
     compiler_args = args.args
 
     n = 0
-    with cd(Env.iot49_dir()):
+    with cd(Env.iot_projects()):
         for package in packages:
             for name, path in package.files().items():
                 if not name.endswith('.py'): continue

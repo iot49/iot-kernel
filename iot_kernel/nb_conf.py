@@ -22,7 +22,7 @@ class NbConf:
         NbConf._store_config(config)
 
 
-    _DB = Env.expand_path(os.path.join(Env.iot_dir(), ".iot49_connect_rc"))
+    _DB = Env.expand_path(os.path.join('~', ".iot49_connect_rc"))
 
     @staticmethod
     def _store_config(config):

@@ -12,7 +12,7 @@ import os
 @line_magic
 def cd_magic(kernel, args):
     """Change current working directory on host.
-Expands ~ and shell variables (e.g. $IOT49) as expected."""
+Expands ~ and shell variables (e.g. $IOT_PROJECTS) as expected."""
     path = os.path.expanduser(os.path.expandvars(args.path))
     if not os.path.isdir(path):
         raise ValueError(f"directory '{path}' does not exist")

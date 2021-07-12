@@ -33,8 +33,7 @@ Adds files on host but not on microcontroller, updates changed files,
 and deletes files on microcontroller but not on hosts. Ignores files
 starting with a period.
 
-The list of files to upload is taken from the yaml configuration
-in $IOT49/devices.
+The list of files to upload is taken from the yaml device configuration.
 
 %rsync synchronizes the time on the microcontroller to the host if
 they differ by more than a few seconds to ensure correct updates.
