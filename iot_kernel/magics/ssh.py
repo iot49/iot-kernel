@@ -27,6 +27,8 @@ Example:
 def service_magic(kernel, args, code):
     """Evaluate in named container using ssh.
 This specifically supports balena apps.
+Note: Code submitted to bash for evaluation. Execution fails if 
+      container does not have bash installed.
 
 Example:
     %%service gcc
@@ -59,7 +61,7 @@ Example:
     container_name = container_names.get(container)
     if not container_name:
         kernel.error(f"No container with name '{container}'")
-        kernel.error(f"Available containers: {', '.join(container_names.keys())}")
+        kernel.error(f"Available containers: host, {', '.join(container_names.keys())}")
         return
 
     # 3) ssh into container
