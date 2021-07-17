@@ -76,9 +76,11 @@ def ssh_exec(kernel, host, port, user, pwd, cmd):
         ssh.connect(host, port, user, pwd)
         channel = ssh.get_transport().open_session()
         channel.exec_command(cmd)
-        while True:
+        # fix for truncated output?
+        last = time.monotonic()
+        while (time.monotonic()-last) < 1:
             if channel.exit_status_ready():
-                break
+                continue
             buf = b''
             while channel.recv_ready():
                 buf += channel.recv(1)
@@ -89,5 +91,5 @@ def ssh_exec(kernel, host, port, user, pwd, cmd):
                 buf += channel.recv_stderr(1)
             if len(buf):
                 kernel.error(buf.decode(), end='')
-            time.sleep(0.001)
-
+            last = time.monotonic()
+            time.sleep(0.01)
