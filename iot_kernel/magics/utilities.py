@@ -1,4 +1,4 @@
-from .magic import line_magic, arg, CELL_MAGIC, LINE_MAGIC
+from .magic import line_magic, cell_magic, arg, CELL_MAGIC, LINE_MAGIC
 from ..kernel_logger import logger
 
 from iot_device import Env
@@ -75,3 +75,18 @@ Example:
             if '(' in s:
                 level = fmt.format(k, s[s.find("(")+1:s.find(")")])
                 kernel.print(level, colors.get(level.split(' ')[-1], 'grey'))
+
+
+@arg('-a', '--append', action='store_true', help="Append to file. Default is overwrite.")
+@arg("path", help="file path")
+@cell_magic
+def writefile(kernel, args, code):
+    """Write cell contents to file.
+Example:
+    %%writefile $IOT_PROJECTS/devices/mcu.yaml
+    my_mcu:
+        uid: 50:02:21:a1:a7:2c"""
+    path = os.path.expandvars(os.path.expanduser(args.path))
+    kernel.print(f"Writing {path}")
+    with open(path, "a" if args.append else "w") as f:
+        f.write(code)
