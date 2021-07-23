@@ -1,5 +1,5 @@
 from .magic import cell_magic, arg
-import paramiko, time
+import paramiko, time, os
 
 
 @arg("--password", type=str, default=None, help="password")
@@ -27,19 +27,22 @@ Example:
 def service_magic(kernel, args, code):
     """Evaluate in named container using ssh.
 This specifically supports balena apps.
+
+Before running the instructions, the file .init_${container}.sh
+is sourced, if it exists. ${container} is the name of the service given.
+
 Note: Code submitted to bash for evaluation. Execution fails if 
       container does not have bash installed.
 
 Example:
-    %%service gcc
-    printenv
-    ls /
-    which gcc
+    %%service esp-idf
+    printenv | grep BALENA_SERVICE_NAME
+    which idf.py
 """
     # ssh into container name
-    container = args.container[0]
+    service = args.container[0]
 
-    if container == 'host':
+    if service == 'host':
         ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', code)
         return
 
@@ -58,14 +61,18 @@ Example:
             container_names[key] = name
 
     # 2) lookup container
-    container_name = container_names.get(container)
+    container_name = container_names.get(service)
     if not container_name:
-        kernel.error(f"No container with name '{container}'")
+        kernel.error(f"No container with name '{service}'")
         kernel.error(f"Available containers: host, {', '.join(container_names.keys())}")
         return
 
     # 3) ssh into container
-    cmd = f"balena-engine exec {container_name} bash -c '{code}'"
+    c = """if [ -f .init_{}.sh ]; then
+    . .init_{}.sh
+fi
+""".format(service, service) + code
+    cmd = f"balena-engine exec {container_name} bash -c '{c}'"
     ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', cmd)
 
 
