@@ -1,7 +1,6 @@
 from .magic import line_magic, arg
 
-from iot_device import RemoteError
-from iot_device import cd
+from iot_device import RemoteError, Env, cd
 import contextlib
 import os
 import sys
@@ -42,7 +41,7 @@ Examples:
     def fname_remote(src):
         if src.startswith(":"):
             src = src[1:]
-        return src
+        return Env.expand_path(src)
 
     def fname_cp_dest(src, dest):
         src = src.rsplit("/", 1)[-1]
@@ -52,7 +51,7 @@ Examples:
             dest = "./" + src
         elif dest.endswith("/"):
             dest += src
-        return dest
+        return Env.expand_path(dest)
 
     srcs = args.sources
     dest = args.destination
@@ -66,11 +65,14 @@ Examples:
             src = fname_remote(src)
             dst = fname_cp_dest(src, dest)
             try:
-                xfer(src, dst)
+                xfer(src, dst, data_consumer=kernel.data_consumer)
             except RemoteError as e:
                 kernel.error(f"Error in 'cp {src} {dst}'")
-                kernel.stop(f"\n{e.msg}")
+                kernel.stop(f"\n{e}")
             except FileNotFoundError as e:
+                kernel.stop(f"\n{e}")
+            except Exception as e:
+                kernel.error(f"\ncp: {e}")
                 kernel.stop(f"\n{e}")
 
 
