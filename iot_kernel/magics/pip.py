@@ -36,9 +36,10 @@ Examples:
     """
     for package in args.packages:
         target = args.target
-        target = os.path.join(Env.iot_projects(), target)
+        if not target.startswith(('/', '~')):
+            target = os.path.join(Env.iot_projects(), args)
         os.makedirs(target, exist_ok=True)
-        pip_install(kernel, package, target)
+        pip_install(kernel, package, Env.expand_path(target))
 
 
 @arg("-t", "--target", default="libs", help="target directory relative to $IOT_PROJECTS")
@@ -60,10 +61,12 @@ Examples:
 The install is delegated to "micropip.py" described at
 https://github.com/peterhinch/micropython-samples/tree/master/micropip.
     """
-    target = os.path.join(Env.iot_projects(), args.target)
+    target = args.target
+    if not target.startswith(('/', '~')):
+        target = os.path.join(Env.iot_projects(), args)
     if not target.endswith('/'): target += '/'
     os.makedirs(target, exist_ok=True)
     for p in args.packages:
         if not p.startswith('micropython-'):
             p = 'micropython-' + p
-        upip_install(p, target)
+        upip_install(p, Env.expand_path(target))

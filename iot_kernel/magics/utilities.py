@@ -13,7 +13,7 @@ import os
 def cd_magic(kernel, args):
     """Change current working directory on host.
 Expands ~ and shell variables (e.g. $IOT_PROJECTS) as expected."""
-    path = os.path.expanduser(os.path.expandvars(args.path))
+    path =  Env.expand_path(args.path)
     if not os.path.isdir(path):
         raise ValueError(f"directory '{path}' does not exist")
     os.chdir(path)
@@ -86,7 +86,7 @@ Example:
     %%writefile $IOT_PROJECTS/devices/mcu.yaml
     my_mcu:
         uid: 50:02:21:a1:a7:2c"""
-    path = os.path.expandvars(os.path.expanduser(args.path))
+    path = Env.expand_path(args.path)
     kernel.print(f"Writing {path}")
     with open(path, "a" if args.append else "w") as f:
         f.write(code)
