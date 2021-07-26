@@ -37,7 +37,7 @@ Examples:
     for package in args.packages:
         target = args.target
         if not target.startswith(('/', '~')):
-            target = os.path.join(Env.iot_projects(), args)
+            target = os.path.join(Env.iot_projects(), target)
         os.makedirs(target, exist_ok=True)
         pip_install(kernel, package, Env.expand_path(target))
 
@@ -63,7 +63,7 @@ https://github.com/peterhinch/micropython-samples/tree/master/micropip.
     """
     target = args.target
     if not target.startswith(('/', '~')):
-        target = os.path.join(Env.iot_projects(), args)
+        target = os.path.join(Env.iot_projects(), target)
     if not target.endswith('/'): target += '/'
     os.makedirs(target, exist_ok=True)
     for p in args.packages:

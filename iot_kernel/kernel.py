@@ -130,7 +130,7 @@ class IoTKernel(IPythonKernel):
                 # eval on mcu ...
                 idx = min((code+'\n%').find('\n%'), (code+'\n!').find('\n!'))
                 with self.device as repl:
-                    repl.exec(code[:idx], self.data_consumer)
+                    repl.exec(code[:idx], data_consumer=self.data_consumer, timeout=1000000000)
                     code = code[idx:]
 
     def __line_magic(self, line):
