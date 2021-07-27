@@ -173,8 +173,10 @@ class IoTKernel(IPythonKernel):
         if data: self.print(data, end='')
 
     def print(self, text="", *color, end='\n'):
-        text = colored(str(text), *color)
+        if len(color) > 0 and len(text.strip()) > 0:
+            text = colored(str(text), *color)
         if end: text += end
+        if not len(text): return
         stream_content = {'name': 'stdout', 'text': text}
         self.send_response(self.iopub_socket, 'stream', stream_content)
 
