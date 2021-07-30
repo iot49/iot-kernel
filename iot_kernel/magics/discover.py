@@ -2,6 +2,8 @@ from iot_device import RemoteError
 from .magic import line_magic, arg
 import serial.tools.list_ports
 
+# %discover, %register, %unregister
+
 
 @arg('-v', '--verbose', action='store_true', help="show uid")
 @arg('-a', '--all', action='store_true', help="list all devices connected to USB ports")
@@ -27,32 +29,6 @@ def discover_magic(kernel, args):
             kernel.print("No devices available")
 
 
-@arg('-q', '--quiet', action='store_true', help="no output (except errors)")
-@arg('schemes', nargs='*', default=None, help="connection scheme")
-@arg('hostname', help="hostname, uid, or url")
-@line_magic
-def connect_magic(kernel, args):
-    """Connect to device
-
-Examples:
-    %connect my_esp32 serial
-    %connect my_esp32 mp
-    %connect 37:ae:a4:39:84:34
-    %connect 'serial:///dev/cu.usbserial-0160B5B8'
-    %connect 'mp://10.39.40.135:8266'
-
-Note: device must be registered for connect to work (see %discover and %register).
-    """
-    dev = kernel.device_registry.get_device(args.hostname, schemes=args.schemes)
-    if dev:
-        kernel.device = dev
-        if not args.quiet:
-            kernel.print(f"Connected to {dev.name} @ {dev.url}", 'grey', 'on_cyan')
-        kernel.set_default_device(args.hostname)
-    else:
-        kernel.stop(f"Device not available: '{args.hostname}'")
-
-
 @arg('url', help="register device by url")
 @line_magic
 def register_magic(kernel, args):
@@ -61,6 +37,10 @@ def register_magic(kernel, args):
     Examples:
         %register 'serial:///dev/cu.usbserial-0160B5B8'
         %register 'mp://10.39.40.135:8266'
+
+    Note: 
+        %connect 'url' 
+    is a shorthand to register the device at the given url and connect to it.
     """
     try:
         kernel.device_registry.register(args.url)

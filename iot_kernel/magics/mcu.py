@@ -1,5 +1,10 @@
 from .magic import line_magic, arg
-import time
+from iot_device import Env
+import time, os
+
+# %softreset
+# %synctime, %gettime
+# %info
 
 @arg("-q", "--quiet", action="store_true", help="suppress terminal output")
 @line_magic
@@ -23,37 +28,28 @@ Example:
             kernel.print("\n")
 
 
+@arg("-v", "--verbose", action="store_true", help="also show resource size and location (on mcu and host)")
 @line_magic
-def name_magic(kernel, _):
-    """Name of currently connected microcontroller."""
-    kernel.print(kernel.device.name)
-
-
-@line_magic
-def uid_magic(kernel, _):
-    """UID of currently connected microcontroller."""
-    kernel.print(kernel.device.uid)
-
-
-@line_magic
-def url_magic(kernel, _):
-    """URL of currently connected microcontroller."""
-    kernel.print(kernel.device.url)
-
-
-@line_magic
-def platform_magic(kernel, _):
-    """sys.platform of currently connected device."""
-    kernel.print(platform(kernel.device))
-
-@line_magic
-def info_magic(kernel, _):
-    fmt = "{:10} {}"
+def info_magic(kernel, args):
+    """Summary about connected device"""
+    fmt = "{:15} {}"
     kernel.print(fmt.format('name', kernel.device.name))
-    kernel.print(fmt.format('platform', platform(kernel.device)))
+    kernel.print(fmt.format('platform', kernel.device.platform))
+    kernel.print(fmt.format('implementation', kernel.device.implementation))
     kernel.print(fmt.format('uid', kernel.device.uid))
     kernel.print(fmt.format('url', kernel.device.url))
-    kernel.print(kernel.device.config)
+    try:
+        config = kernel.device.config
+        iot_projects = Env.expand_path(Env.iot_projects())
+        kernel.print(fmt.format('configuration', config.file))
+        if args.verbose:
+            kernel.print("resources:")
+            for k, v in config.resource_files.items():
+                if v[1] < 0: continue
+                path = os.path.relpath(v[2], iot_projects)
+                kernel.print(f"{v[1]:6d} {k:30} {path}")
+    except ValueError:
+        pass
 
 @line_magic
 def synctime_magic(kernel, _):
@@ -69,7 +65,3 @@ def gettime_magic(kernel, _):
     with kernel.device as repl:
         t = time.mktime(repl.get_time())
         kernel.print(f"{time.strftime('%Y-%b-%d %H:%M:%S', time.localtime(t))}")
-
-def platform(device):
-    with device as repl:
-        return repl.platform

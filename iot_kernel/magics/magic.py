@@ -93,18 +93,17 @@ def arg(*args, **kwargs):
 
 # pylint: disable=unused-wildcard-import
 
-# cell magics
-from .connect import *
-from .ssh import *
-
-# line magics
 from .discover import *
-from .rsync import *
-from .store import *
+from .connect import *
 from .mcu import *
+from .rsync import *
 from .file_ops import *
-from .utilities import *
 from .pip import *
 
-# do on-the-fly compiling by rsync instead (if desired ...)
-# from .mpycross import *
+from .bash import *
+from .ssh import *
+
+from .store import *
+from .utilities import *
+
+from .debugging import *

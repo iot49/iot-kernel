@@ -28,7 +28,7 @@ def storage2mcu(kernel, name):
 @arg('names', nargs='*', help="variable names")
 @line_magic
 def store_magic(kernel, args):
-    """Copy variables between microcontroller and storage.
+    """Copy variables between microcontroller and storage
 The storage is also available from ipyton via it's %store magic.
 
 Examples:

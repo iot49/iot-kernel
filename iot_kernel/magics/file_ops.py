@@ -5,12 +5,14 @@ import contextlib
 import os
 import sys
 
+# %cp, %cat, %rm, %mkdirs
+
 
 @arg("destination", help="Name of destination file/directory")
 @arg("sources", nargs="+", help="Names of source files")
 @line_magic
 def cp_magic(kernel, args):
-    """Copy files between host and microcontroller.
+    """Copy files between host and microcontroller
 File/directory names starting with colon (:) refer to the microcontroller.
 
 CircuitPython: By default, CircuitPython disables writing to the
@@ -79,7 +81,7 @@ Examples:
 @arg("path", help="path to file")
 @line_magic
 def cat_magic(kernel, args):
-    "Print contents of named file on microcontroller"
+    "Output contents of file stored on microcontroller"
     with kernel.device as repl:
         try:
             repl.cat(args.path, kernel.data_consumer)
@@ -93,16 +95,16 @@ def cat_magic(kernel, args):
 @arg("path", nargs='*', help="path to file/directory")
 @line_magic
 def rm_magic(kernel, args):
-    """Delete files relative to path.
+    """Remove files on microcontroller
 
-If path is a directory and -f is not specified, the path is not deleted without feedback.
+If path is a directory and the option -f is not specified, the command is sliently ignored.
 
 Examples:
     %rm a             # delete file a if it exists, no action if it's a directory, error otherwise
     %rm -f a          # delete file or directory a
     %rm -rf a         # delete a, if it's a directory, also delete contents
     %rm -r a          # delete a, if it's a directory, also delete all files but not directories recursively
-    %rm -rf /         # tabula rasa
+    %rm -rf /         # wipe everything, really!
 """
     try:
         with kernel.device as repl:
@@ -115,7 +117,8 @@ Examples:
 @arg("path", help="path of directories to create")
 @line_magic
 def mkdirs_magic(kernel, args):
-    """Create all directories specified by the path, as needed.
+    """Create all directories on the microcontroller, as needed (similar to Linux mkdir -p)
+
 Example:
     # create /a and subfolder /a/b on microcontroller
     %mkdirs a/b

@@ -1,12 +1,54 @@
-from .magic import cell_magic, arg
+from .magic import line_magic, cell_magic, arg
+
+# %connect, %%connect
+
+@arg('-q', '--quiet', action='store_true', help="no output (except errors)")
+@arg('schemes', nargs='*', default=None, help="connection scheme")
+@arg('hostname', help="hostname, uid, or url")
+@line_magic
+def connect_magic(kernel, args):
+    """Connect to device by name, uid, or url
+
+The device must be "registered" before a connection can be made. 
+Execute the %discover magic to automatially register devices connected to
+USB ports and devices advertised with broadcast messages.
+
+Use the URL form to connect to a serial device (USB). E.g.
+
+    %connect 'serial:///dev/serial2'
+
+This will automatically register the device and connect to it.
+
+Examples:
+    # connect to a device by name defined in configuration file
+    %connect device_name
+    # connect to the serial port 
+    # useful when the device is available by several means, e.g. serial and webrepl
+    %connect my_esp32 serial
+    # connect specifically to webrepl
+    %connect my_esp32 wp
+    %connect 37:ae:a4:39:84:34
+    # connect to serial device at /dev/cu.usbserial-0160B5B8
+    %connect 'serial:///dev/cu.usbserial-0160B5B8'
+    # connect to a device via the mp protocol
+    %connect 'mp://10.39.40.135:8266'
+    """
+    dev = kernel.device_registry.get_device(args.hostname, schemes=args.schemes)
+    if dev:
+        kernel.device = dev
+        if not args.quiet:
+            kernel.print(f"Connected to {dev.name} @ {dev.url}", 'grey', 'on_cyan')
+        kernel.set_default_device(args.hostname)
+    else:
+        kernel.stop(f"Device not available: '{args.hostname}'")
+
 
 @arg("-q", "--quiet", action="store_true", help="suppress terminal output")
 @arg("--all", action="store_true", help="run code on all connected microcontrollers")
-@arg("--host", action="store_true", help="run code host (ipython)")
 @arg('names', nargs='*', help="microcontroller names or UIDs")
 @cell_magic
 def connect_magic(kernel, args, code):
-    """Evaluate code sequentially on named devices.
+    """Generalization of %connect to run code on several devices sequentially
 Examples:
 
   %%connect --host --all
@@ -24,9 +66,6 @@ Examples:
         if not args.quiet:
             kernel.print(f"\n----- {hostname}\n", 'grey', 'on_cyan')
     if len(code) == 0: return
-    if args.host:
-        show("HOST")
-        kernel.execute_ipython(code)
     if args.all:
         for d in kernel.device_registry.devices:
             kernel.device = d
@@ -49,27 +88,5 @@ Examples:
                 except StopDoExecute:
                     pass
         else:
+            # execute on currently connected device
             kernel.execute_cell(code)
-
-@cell_magic
-def host_magic(kernel, _, code):
-    """Pass cell to host (cPython) for evaluation."""
-    kernel.execute_ipython(code)
-
-@cell_magic
-def bash_magic(kernel, _, code):
-    """Pass cell to bash shell for evaluation.
-
-Example:
-  %%bash
-  printenv
-    """
-    from subprocess import Popen, PIPE, STDOUT
-    with Popen(code, stdout=PIPE, shell=True, stderr=STDOUT, close_fds=True) as process:
-        for line in iter(process.stdout.readline, b''):
-            kernel.print(line.rstrip().decode('utf-8'))
-
-@cell_magic
-def kernel_magic(kernel, _, code):
-    # exec code in kernel contect. Debugging only.
-    exec(code)

@@ -2,6 +2,8 @@ from .magic import cell_magic, arg
 import paramiko, time, os
 
 
+@arg("--out", type=str, default=None, help="store stdout in shell environment variable")
+@arg("--err", type=str, default=None, help="store stderr in shell environment variable")
 @arg("--password", type=str, default=None, help="password")
 @arg("-p", "--port", type=int, default=22, help="suppress terminal output")
 @arg('host', nargs=1, help="host address and login name: user@ssh.com")
@@ -19,14 +21,16 @@ Example:
         user, host = host.split('@', 1)
     port = args.port
     pwd = args.password or ''
-    ssh_exec(kernel, host, port, user, pwd, code)
+    ssh_exec(kernel, host, port, user, pwd, code, args.out, args.err)
 
 
+@arg("--out", type=str, default=None, help="store stdout in shell environment variable")
+@arg("--err", type=str, default=None, help="store stderr in shell environment variable")
 @arg('container', nargs=1, help="name of container to ssh into")
 @cell_magic
 def service_magic(kernel, args, code):
-    """Evaluate in named container using ssh.
-This specifically supports balena apps.
+    """Send code to bash in named container for execution
+This specifically supports docker/balena apps.
 
 Before running the instructions, the file .init_${container}.sh
 is sourced, if it exists. ${container} is the name of the service given.
@@ -38,12 +42,16 @@ Example:
     %%service esp-idf
     printenv | grep BALENA_SERVICE_NAME
     which idf.py
+
+    # lookup mdns address and assign to $OUT
+    %%service host --out OUT
+    ping -c 2 pi4server.local | awk -F"[()]" '{print $2}'
 """
     # ssh into container name
     service = args.container[0]
 
     if service == 'host':
-        ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', code)
+        ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', code, args.out, args.err)
         return
 
     # 1) get container names
@@ -68,15 +76,16 @@ Example:
         return
 
     # 3) ssh into container
-    c = """if [ -f .init_{}.sh ]; then
+    c = \
+"""if [ -f .init_{}.sh ]; then
     . .init_{}.sh
 fi
 """.format(service, service) + code
     cmd = f"balena-engine exec {container_name} bash -c '{c}'"
-    ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', cmd)
+    ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', cmd, args.out, args.err)
 
 
-def ssh_exec(kernel, host, port, user, pwd, cmd):
+def ssh_exec(kernel, host, port, user, pwd, cmd, out, err):
     """exec command on host, print results"""
     with paramiko.SSHClient() as ssh:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -85,6 +94,9 @@ def ssh_exec(kernel, host, port, user, pwd, cmd):
         channel.exec_command(cmd)
         # fix for truncated output?
         last = time.monotonic()
+        # stdout and stderr
+        stdout = b''
+        stderr = b''
         while (time.monotonic()-last) < 1:
             if channel.exit_status_ready():
                 continue
@@ -92,11 +104,15 @@ def ssh_exec(kernel, host, port, user, pwd, cmd):
             while channel.recv_ready():
                 buf += channel.recv(1)
             if len(buf):
-                kernel.print(buf.decode(), end='')
+                stdout += buf
+                if not out: kernel.print(buf.decode(), end='')
             buf = b''
             while channel.recv_stderr_ready():
                 buf += channel.recv_stderr(1)
             if len(buf):
-                kernel.error(buf.decode(), end='')
+                stderr += buf
+                if not err: kernel.error(buf.decode(), end='')
             last = time.monotonic()
             time.sleep(0.01)
+        if out: os.environ[out] = stdout.decode()
+        if err: os.environ[err] = stderr.decode()

@@ -47,7 +47,7 @@ Examples:
 @arg('operation', help="only supported value is 'install'")
 @line_magic
 def upip_magic(kernel, args):
-    """Install MicroPython packages.
+    """Install MicroPython packages
 MicroPython uses a special package format that is not compatible with standard
 `pip`. `%upip` first searches for packages on micropython.org
 (see https://github.com/micropython/micropython-lib/ for available packages).

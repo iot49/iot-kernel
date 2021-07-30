@@ -70,13 +70,21 @@ class IoTKernel(IPythonKernel):
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
         self.silent = silent
-        self.store_history = store_history
-        self.user_expressions = user_expressions
-        self.allow_stdin = allow_stdin
         try:
-            # transform all code sections into %%name ... + body
-            for cell in ('connect\n' + code).split('\n%%'):
-                self.__execute_section('%%' + cell)
+            if not code.startswith('%%'):
+                code = '%%connect\n' + code
+            head, code = (code + '\n').split('\n', 1)
+            magic, args = (head + ' ').split(' ', 1)
+            if magic == '%%host':
+                # pass directly to host
+                return super().do_execute(code, silent, store_history, user_expressions, allow_stdin)
+            method = CELL_MAGIC.get(magic[2:])
+            if not method:
+                self.error(f"Cell magic {magic} not defined")
+            else:
+                res = method[0](self, args, code)
+                if res: return res
+        # error handling is a mess ... could this be moved lower down?
         except StopDoExecute:
             pass
         except KeyboardInterrupt:
@@ -98,34 +106,23 @@ class IoTKernel(IPythonKernel):
             self.print("\n\nDetails:\n")
             self.exception(ex, display_trace=True)
             time.sleep(0.5)
-        return {
-            'status': 'ok',
-            'execution_count': self.execution_count,
-        }
-
-    def __execute_section(self, cell):
-        # handle cell (starts with %%name ...)
-        head, code = (cell + '\n').split('\n', 1)
-        code = code.strip()
-        magic, args = (head + ' ').split(' ', 1)
-        args = args.strip()
-        logger.debug(f"cell_magic {magic} args={args} code={code}")
-        method = CELL_MAGIC.get(magic[2:])
-        if method:
-            method[0](self, args, code)
-        else:
-            # let ipython handle the cell magic
-            return self.execute_ipython(cell)
+        return {'status': 'ok',
+                # The base class increments the execution count
+                'execution_count': self.execution_count,
+                'payload': [],
+                'user_expressions': {},
+               }
 
     def execute_cell(self, code):
-        # evaluate IoT Python cell
+        # evaluate cell - code on MCU, magics in IoT Kernel
+        # called from %%connect
         while code:
             code = code.strip()
             if code.startswith('%') or code.startswith('!'):
                 split = code.split('\n', maxsplit=1)
                 line = split[0]
                 code = split[1] if len(split) > 1 else None
-                self.__line_magic(line)
+                self._execute_line_magic(line)
             else:
                 # eval on mcu ...
                 idx = min((code+'\n%').find('\n%'), (code+'\n!').find('\n!'))
@@ -133,11 +130,10 @@ class IoTKernel(IPythonKernel):
                     repl.exec(code[:idx], data_consumer=self.data_consumer, timeout=1000000000)
                     code = code[idx:]
 
-    def __line_magic(self, line):
+    def _execute_line_magic(self, line):
         if line.startswith('!'):
             logger.debug(f"shell escape: {line}")
-            self.execute_ipython(line)
-            return
+            return super().do_execute(line, False)
         m = re.match(r'%([^ ]*)( .*)?', line)
         if not m:
             self.error(f"Syntax error: '{line.encode()}'\n")
@@ -150,13 +146,7 @@ class IoTKernel(IPythonKernel):
         if method:
             method[0](self, rest)
         else:
-            # pass line magic to ipython
-            logger.debug(f"pass to IPython: {line}")
-            self.execute_ipython(line)
-
-    def execute_ipython(self, code):
-        # evaluate code with IPython
-        super().do_execute(code, self.silent, self.store_history, self.user_expressions, self.allow_stdin)
+            self.error(f"Line magic {magic} not defined")
 
     def data_consumer(self, data:bytes):
         if not data or self.silent: return
