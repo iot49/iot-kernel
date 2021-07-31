@@ -4,7 +4,7 @@ import time, os
 
 # %softreset
 # %synctime, %gettime
-# %info
+# %info, %name, %uid
 
 @arg("-q", "--quiet", action="store_true", help="suppress terminal output")
 @line_magic
@@ -26,6 +26,18 @@ Example:
         repl.softreset()
         if not args.quiet:
             kernel.print("\n")
+
+
+@line_magic
+def uid_magic(kernel, _):
+    """Print the uid of the currently connected device"""
+    kernel.print(kernel.device.uid)
+
+
+@line_magic
+def name_magic(kernel, _):
+    """Print the name of the currently connected device"""
+    kernel.print(kernel.device.name)
 
 
 @arg("-v", "--verbose", action="store_true", help="also show resource size and location (on mcu and host)")
