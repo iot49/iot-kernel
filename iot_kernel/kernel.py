@@ -11,6 +11,7 @@ from serial import SerialException
 from websocket import WebSocketException
 from ipykernel.ipkernel import IPythonKernel
 from termcolor import colored
+from subprocess import Popen, PIPE, STDOUT
 import traceback, re, os, time, logging
 
 
@@ -111,6 +112,7 @@ class IoTKernel(IPythonKernel):
                 'execution_count': self.execution_count,
                 'payload': [],
                 'user_expressions': {},
+                'text': ''
                }
 
     def execute_cell(self, code):
@@ -133,7 +135,10 @@ class IoTKernel(IPythonKernel):
     def _execute_line_magic(self, line):
         if line.startswith('!'):
             logger.debug(f"shell escape: {line}")
-            return super().do_execute(line, False)
+            with Popen(line[1:], stdout=PIPE, shell=True, stderr=STDOUT, close_fds=True, executable='/bin/bash') as process:
+                for line in iter(process.stdout.readline, b''):
+                    self.print(line.rstrip().decode('utf-8'))
+            return
         m = re.match(r'%([^ ]*)( .*)?', line)
         if not m:
             self.error(f"Syntax error: '{line.encode()}'\n")
