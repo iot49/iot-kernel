@@ -24,6 +24,7 @@ Example:
     ssh_exec(kernel, host, port, user, pwd, code, args.out, args.err)
 
 
+@arg("-u", "--user", type=str, default="iot", help="Username or UID (format: <name|uid>[:<group|gid>])")
 @arg("--out", type=str, default=None, help="store stdout in shell environment variable")
 @arg("--err", type=str, default=None, help="store stderr in shell environment variable")
 @arg('container', nargs=1, help="name of container to ssh into")
@@ -81,7 +82,7 @@ Example:
     . .init_{}.sh
 fi
 """.format(service, service) + code
-    cmd = f"balena-engine exec {container_name} bash -c '{c}'"
+    cmd = f"balena-engine exec -u {args.user} {container_name} bash -c '{c}'"
     ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', cmd, args.out, args.err)
 
 
