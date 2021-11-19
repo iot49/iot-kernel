@@ -41,8 +41,8 @@ class IoTKernel(IPythonKernel):
         self.__device_registry = DeviceRegistry()
         # current device
         self.__device = None
-        # set initial host cwd
-        os.chdir(self.nb_conf.get("cwd", os.path.expanduser('~')))
+        # initial host is location of notebook
+        # os.chdir(self.nb_conf.get("cwd", os.path.expanduser('~')))
 
     @property
     def device_registry(self):
@@ -151,7 +151,7 @@ class IoTKernel(IPythonKernel):
         if method:
             method[0](self, rest)
         else:
-            self.error(f"Line magic {magic} not defined")
+            self.error(f"Line magic {name} not defined")
 
     def data_consumer(self, data:bytes):
         if not data or self.silent: return
