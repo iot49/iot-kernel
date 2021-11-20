@@ -94,14 +94,13 @@ class IoTKernel(IPythonKernel):
                 repl.abort()
         except (SerialException, ConnectionResetError, ConnectionRefusedError) as e:
             # no exclusive access (serial) or connection reset (network)
-            self.error(f"{self.device.name}: {e}")
+            self.error(f"{self.device.name}: {e}", end="")
         except WebSocketException as e:
             self.error(f"Webrepl: {e}")
         except TimeoutError:
             self.error(f"Timeout connecting to {self.device.name} @ {self.device.url}")
         except RemoteError as e:
-            self.error(str(e))
-            logger.exception(str(e))
+            self.error(str(e), end="")
         except Exception as ex:
             self.error(f"***** {ex}\n")
             self.print("\n\nDetails:\n")
