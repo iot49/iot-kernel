@@ -78,7 +78,8 @@ Example:
 
     # 3) ssh into container
     c = \
-"""if [ -f .init_{}.sh ]; then
+"""cd $HOME
+if [ -f .init_{}.sh ]; then
     . .init_{}.sh
 fi
 """.format(service, service) + code
