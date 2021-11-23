@@ -6,6 +6,7 @@ import serial.tools.list_ports
 
 
 @arg('-v', '--verbose', action='store_true', help="show uid")
+@arg('-f', '--force', action='store_true', help="rediscover all devices, even ones detected previously")
 @arg('-a', '--all', action='store_true', help="list all devices connected to USB ports")
 @line_magic
 def discover_magic(kernel, args):
@@ -18,6 +19,7 @@ def discover_magic(kernel, args):
                     kernel.print(f"  {a:12} {getattr(port, a)}")
             kernel.print()
     else:
+        if args.force: kernel.device_registry.clear()
         devices = kernel.device_registry.devices
         n_width = max([len(dev.name) for dev in devices], default=0)
         u_width = max([len(dev.url)  for dev in devices], default=0)

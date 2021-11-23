@@ -9,8 +9,9 @@ import time, os
 @arg("-q", "--quiet", action="store_true", help="suppress terminal output")
 @line_magic
 def softreset_magic(kernel, args):
-    """Reset microcontroller. Similar to pressing the reset button.
+    """Reset microcontroller.
 Purges all variables and releases all devices (e.g. I2C, UART, ...).
+Does not run boot.py and main.py.
 
 Example:
     a = 5
@@ -24,6 +25,30 @@ Example:
             kernel.print("!!!!!   softreset ...     !!!!!", 'red', 'on_cyan')
             kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", 'red', 'on_cyan', end="")
         repl.softreset()
+        if not args.quiet:
+            kernel.print("\n")
+
+
+@arg("-q", "--quiet", action="store_true", help="suppress terminal output")
+@line_magic
+def hardreset_magic(kernel, args):
+    """Reset microcontroller. Similar to pressing the reset button.
+Purges all variables and releases all devices (e.g. I2C, UART, ...),
+then runs boot.py and main.py.
+
+Example:
+    %hardreset
+    # Output from boot.py & main.py, if any.
+    # Note: does not wait for boot.py and main.py to finish.
+    # Use ctrl-C to terminate boot.py or main.py.
+"""
+    with kernel.device as repl:
+        if not args.quiet:
+            kernel.print("")
+            kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", 'red', 'on_cyan')
+            kernel.print("!!!!!   hardreset ...     !!!!!", 'red', 'on_cyan')
+            kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", 'red', 'on_cyan', end="")
+        repl.hardreset()
         if not args.quiet:
             kernel.print("\n")
 
