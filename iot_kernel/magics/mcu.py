@@ -11,7 +11,6 @@ import time, os
 def softreset_magic(kernel, args):
     """Reset microcontroller.
 Purges all variables and releases all devices (e.g. I2C, UART, ...).
-Does not run boot.py and main.py.
 
 Example:
     a = 5
@@ -26,32 +25,28 @@ Example:
             kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", 'red', 'on_cyan', end="")
         repl.softreset()
         if not args.quiet:
-            kernel.print("\n")
+            kernel.print("")
 
 
-@arg("-q", "--quiet", action="store_true", help="suppress terminal output")
+@arg("-t", "--timeout", type=float, default=2.5, help="time in seconds to wait for output (default: 2.5)")
 @line_magic
 def hardreset_magic(kernel, args):
-    """Reset microcontroller. Similar to pressing the reset button.
-Purges all variables and releases all devices (e.g. I2C, UART, ...),
-then runs boot.py and main.py.
-
+    """Reset microcontroller by calling 'machine.reset()'. 
+Prints boot messages (output from boot.py and main.py) to console.
+If there is no output, does not wait for main.py to finish.
+Note: there may be errors (cannot enter raw repl) from subsequent 
+      instructions due to unexpected output.
+    
 Example:
-    %hardreset
-    # Output from boot.py & main.py, if any.
-    # Note: does not wait for boot.py and main.py to finish.
-    # Use ctrl-C to terminate boot.py or main.py.
+    %hardreset                 
 """
     with kernel.device as repl:
-        if not args.quiet:
-            kernel.print("")
-            kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", 'red', 'on_cyan')
-            kernel.print("!!!!!   hardreset ...     !!!!!", 'red', 'on_cyan')
-            kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", 'red', 'on_cyan', end="")
-        repl.hardreset()
-        if not args.quiet:
-            kernel.print("\n")
-
+        kernel.print("")
+        kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",   'red', 'on_cyan')
+        kernel.print("!!!!!   hardreset ...     !!!!!",   'red', 'on_cyan')
+        kernel.print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", 'red', 'on_cyan')
+        repl.hardreset(kernel, args.timeout)
+        kernel.print("")
 
 @line_magic
 def uid_magic(kernel, _):
