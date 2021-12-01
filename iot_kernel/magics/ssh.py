@@ -36,9 +36,6 @@ This specifically supports docker/balena apps.
 Before running the instructions, the file .init_${container}.sh
 is sourced, if it exists. ${container} is the name of the service given.
 
-Note: Code submitted to bash for evaluation. Execution fails if 
-      container does not have bash installed.
-
 Example:
     %%service esp-idf
     printenv | grep BALENA_SERVICE_NAME
@@ -64,9 +61,9 @@ Example:
         ssh.connect('172.17.0.1', 22222, 'root', '')
         _, stdout, stderr = ssh.exec_command("balena-engine ps")
         for line in stdout.readlines()[1:]:
-            key = name = line.split()[-1]
-            if name.count('_') > 1:
-                key = name.rsplit('_', 2)[0]
+            name = line.split()[-1]
+            key = name.rsplit('_')[0]
+            if key == "balena": key = "balena-supervisor"
             container_names[key] = name
 
     # 2) lookup container
@@ -83,7 +80,7 @@ if [ -f .init_{}.sh ]; then
     . .init_{}.sh
 fi
 """.format(service, service) + code
-    cmd = f"balena-engine exec -u {args.user} {container_name} bash -c '{c}'"
+    cmd = f"balena-engine exec -u {args.user} {container_name} {args.shell} -c '{c}'"
     ssh_exec(kernel, '172.17.0.1', 22222, 'root', '', cmd, args.out, args.err)
 
 
