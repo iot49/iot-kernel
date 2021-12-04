@@ -25,6 +25,7 @@ Example:
 
 
 @arg("-u", "--user", type=str, default="iot", help="Username or UID (format: <name|uid>[:<group|gid>])")
+@arg("-s", "--shell", type=str, default="/bin/bash", help="Shell to use in target container. Default: /bin/bash")
 @arg("--out", type=str, default=None, help="store stdout in shell environment variable")
 @arg("--err", type=str, default=None, help="store stderr in shell environment variable")
 @arg('container', nargs=1, help="name of container to ssh into")
