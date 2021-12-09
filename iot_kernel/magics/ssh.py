@@ -1,5 +1,5 @@
 from .magic import cell_magic, arg
-import paramiko, time, os
+import paramiko, time, os, select
 
 
 @arg("--out", type=str, default=None, help="store stdout in shell environment variable")
@@ -90,29 +90,66 @@ def ssh_exec(kernel, host, port, user, pwd, cmd, out, err):
     with paramiko.SSHClient() as ssh:
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(host, port, user, pwd)
-        channel = ssh.get_transport().open_session()
-        channel.exec_command(cmd)
-        # fix for truncated output?
-        last = time.monotonic()
-        # stdout and stderr
-        stdout = b''
-        stderr = b''
-        while (time.monotonic()-last) < 1:
-            if channel.exit_status_ready():
-                continue
-            buf = b''
-            while channel.recv_ready():
-                buf += channel.recv(1)
-            if len(buf):
-                stdout += buf
-                if not out: kernel.print(buf.decode(), end='')
-            buf = b''
-            while channel.recv_stderr_ready():
-                buf += channel.recv_stderr(1)
-            if len(buf):
-                stderr += buf
-                if not err: kernel.error(buf.decode(), end='')
-            last = time.monotonic()
-            time.sleep(0.01)
-        if out: os.environ[out] = stdout.decode()
-        if err: os.environ[err] = stderr.decode()
+        ssh_io(kernel, ssh, cmd, 1, out, err)
+        return
+
+
+# https://stackoverflow.com/questions/23504126/do-you-have-to-check-exit-status-ready-if-you-are-going-to-check-recv-ready
+def ssh_io(kernel, ssh, cmd, timeout=1, out=None, err=None):
+    # one channel per command
+    stdin, stdout, stderr = ssh.exec_command(cmd) 
+    # get the shared channel for stdout/stderr/stdin
+    channel = stdout.channel
+
+    # we do not need stdin.
+    stdin.close()                 
+    # indicate that we're not going to write to that channel anymore
+    channel.shutdown_write()      
+
+    # read stdout/stderr in order to prevent read block hangs
+    data = stdout.channel.recv(len(stdout.channel.in_buffer)).decode()
+    if out:
+        out.append(data)
+    else:
+        kernel.print(data, end='')
+    
+    # chunked read to prevent stalls
+    while not channel.closed or channel.recv_ready() or channel.recv_stderr_ready(): 
+        # stop if channel was closed prematurely, and there is no data in the buffers.
+        got_chunk = False
+        readq, _, _ = select.select([stdout.channel], [], [], timeout)
+        for c in readq:
+            if c.recv_ready():
+                data = stdout.channel.recv(len(c.in_buffer)).decode()
+                if out:
+                    out.append(data)
+                else:
+                    kernel.print(data, end='')
+                got_chunk = True
+            if c.recv_stderr_ready(): 
+                # make sure to read stderr to prevent stall    
+                data = stderr.channel.recv_stderr(len(c.in_stderr_buffer))  
+                if err:
+                    err.append(data)
+                else:
+                    kernel.error(data, end='')
+                got_chunk = True  
+        '''
+        1) make sure that there are at least 2 cycles with no data in the input buffers in order to not exit too early (i.e. cat on a >200k file).
+        2) if no data arrived in the last loop, check if we already received the exit code
+        3) check if input buffers are empty
+        4) exit the loop
+        '''
+        if not got_chunk \
+            and stdout.channel.exit_status_ready() \
+            and not stderr.channel.recv_stderr_ready() \
+            and not stdout.channel.recv_ready(): 
+            # indicate that we're not going to read from this channel anymore
+            stdout.channel.shutdown_read()  
+            # close the channel
+            stdout.channel.close()
+            break    # exit as remote side is finished
+
+    # close all the pseudofiles
+    stdout.close()
+    stderr.close()
